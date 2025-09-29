@@ -1,12 +1,12 @@
-import { useLoaderData } from "@remix-run/react";
+import { useLoaderData, useFetcher } from "@remix-run/react";
 import {
   Card,
   Frame,
   Layout,
   Page,
   Thumbnail,
-  Text,
   DataTable,
+  Button,
 } from "@shopify/polaris";
 import { json } from "@remix-run/node";
 import { authenticate } from "../shopify.server";
@@ -56,9 +56,33 @@ export const loader = async ({ request }) => {
   return json({ products });
 };
 
+// --- Action: delete product ---
+export const action = async ({ request }) => {
+  const { admin } = await authenticate.admin(request);
+  const formData = await request.formData();
+  const productId = formData.get("productId");
+
+  if (productId) {
+    await admin.graphql(`
+      mutation {
+        productDelete(input: { id: "${productId}" }) {
+          deletedProductId
+          userErrors {
+            field
+            message
+          }
+        }
+      }
+    `);
+  }
+
+  return json({ success: true });
+};
+
 // --- Component: render with Polaris ---
 export default function ProductsPage() {
   const { products } = useLoaderData();
+  const fetcher = useFetcher();
 
   const rows = products.map((p) => [
     <Thumbnail
@@ -71,6 +95,12 @@ export default function ProductsPage() {
     p.status,
     p.variants?.edges[0]?.node?.price || "N/A",
     p.variants?.edges[0]?.node?.barcode || "—",
+    <fetcher.Form method="post">
+      <input type="hidden" name="productId" value={p.id} />
+      <Button tone="critical" variant="primary" submit>
+        Delete
+      </Button>
+    </fetcher.Form>,
   ]);
 
   return (
@@ -87,6 +117,7 @@ export default function ProductsPage() {
                   "text",
                   "numeric",
                   "text",
+                  "text",
                 ]}
                 headings={[
                   "Image",
@@ -95,6 +126,7 @@ export default function ProductsPage() {
                   "Status",
                   "Price",
                   "Barcode",
+                  "Actions",
                 ]}
                 rows={rows}
               />
