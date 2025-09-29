@@ -7,9 +7,12 @@ import {
   Thumbnail,
   DataTable,
   Button,
+  Modal,
+  TextField,
 } from "@shopify/polaris";
 import { json } from "@remix-run/node";
 import { authenticate } from "../shopify.server";
+import { useState, useCallback } from "react";
 
 // --- Loader: fetch products from Shopify GraphQL ---
 export const loader = async ({ request }) => {
@@ -49,20 +52,19 @@ export const loader = async ({ request }) => {
   `);
 
   const data = await response.json();
-
-  const products =
-    data?.data?.products?.edges?.map((edge) => edge.node) || [];
+  const products = data?.data?.products?.edges?.map((edge) => edge.node) || [];
 
   return json({ products });
 };
 
-// --- Action: delete product ---
+// --- Action: handle delete or update ---
 export const action = async ({ request }) => {
   const { admin } = await authenticate.admin(request);
   const formData = await request.formData();
+  const intent = formData.get("intent");
   const productId = formData.get("productId");
 
-  if (productId) {
+  if (intent === "delete" && productId) {
     await admin.graphql(`
       mutation {
         productDelete(input: { id: "${productId}" }) {
@@ -74,15 +76,46 @@ export const action = async ({ request }) => {
         }
       }
     `);
+    return json({ success: true, action: "delete" });
   }
 
-  return json({ success: true });
+  if (intent === "update" && productId) {
+    const newTitle = formData.get("title");
+    await admin.graphql(`
+      mutation {
+        productUpdate(input: { id: "${productId}", title: "${newTitle}" }) {
+          product {
+            id
+            title
+          }
+          userErrors {
+            field
+            message
+          }
+        }
+      }
+    `);
+    return json({ success: true, action: "update" });
+  }
+
+  return json({ success: false });
 };
 
 // --- Component: render with Polaris ---
 export default function ProductsPage() {
   const { products } = useLoaderData();
   const fetcher = useFetcher();
+  const [activeModal, setActiveModal] = useState(false);
+  const [currentProduct, setCurrentProduct] = useState(null);
+  const [productTitle, setProductTitle] = useState("");
+
+  const handleModalChange = useCallback(() => setActiveModal(!activeModal), [activeModal]);
+
+  const openUpdateModal = (product) => {
+    setCurrentProduct(product);
+    setProductTitle(product.title);
+    setActiveModal(true);
+  };
 
   const rows = products.map((p) => [
     <Thumbnail
@@ -95,12 +128,21 @@ export default function ProductsPage() {
     p.status,
     p.variants?.edges[0]?.node?.price || "N/A",
     p.variants?.edges[0]?.node?.barcode || "—",
-    <fetcher.Form method="post">
-      <input type="hidden" name="productId" value={p.id} />
-      <Button tone="critical" variant="primary" submit>
-        Delete
+    <div style={{ display: "flex", gap: "8px" }}>
+      {/* Delete Button */}
+      <fetcher.Form method="post">
+        <input type="hidden" name="productId" value={p.id} />
+        <input type="hidden" name="intent" value="delete" />
+        <Button tone="critical" variant="primary" submit>
+          Delete
+        </Button>
+      </fetcher.Form>
+
+      {/* Update Button */}
+      <Button onClick={() => openUpdateModal(p)} variant="primary">
+        Update
       </Button>
-    </fetcher.Form>,
+    </div>,
   ]);
 
   return (
@@ -134,6 +176,50 @@ export default function ProductsPage() {
           </Layout.Section>
         </Layout>
       </Page>
+
+      {/* Polaris Modal for Update */}
+      {currentProduct && (
+        <Modal
+          open={activeModal}
+          onClose={handleModalChange}
+          title="Update Product"
+          primaryAction={{
+            content: "Close",
+            onAction: handleModalChange,
+          }}
+        >
+          <Modal.Section>
+            <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+              <Thumbnail
+                source={
+                  currentProduct.images?.edges[0]?.node?.originalSrc || ""
+                }
+                alt={
+                  currentProduct.images?.edges[0]?.node?.altText ||
+                  currentProduct.title
+                }
+                size="small"
+              />
+              <fetcher.Form method="post" style={{ flex: 1 }}>
+                <input type="hidden" name="productId" value={currentProduct.id} />
+                <input type="hidden" name="intent" value="update" />
+                <TextField
+                  label="Product Title"
+                  value={productTitle}
+                  onChange={(val) => setProductTitle(val)}
+                  name="title"
+                  autoComplete="off"
+                />
+                <div style={{ marginTop: "16px" }}>
+                  <Button variant="primary" submit>
+                    Save Changes
+                  </Button>
+                </div>
+              </fetcher.Form>
+            </div>
+          </Modal.Section>
+        </Modal>
+      )}
     </Frame>
   );
 }
