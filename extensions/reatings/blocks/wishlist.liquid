@@ -1,88 +1,49 @@
-<div class="wishlist-inspire__icon" x-data="wishlist">
-
-  <button type="button" @click.debounce="toggleWishlist()">
-    <svg id="wishlist-icon" class="wishlist-inspire__icon--svg" viewBox="0 0 24 24" stroke-width="2" stroke="#000" :fill="wishlisted ? '#000': '#fff' ">
+<div class="wishlist-inspire__icon">
+  <button type="button" id="wishlist-btn">
+    <svg id="wishlist-icon" class="wishlist-inspire__icon--svg" viewBox="0 0 24 24" stroke-width="2" stroke="#000" fill="#fff">
       <path d="M12 21.35l-1.45-1.32C5.4 15.73 2 12.27 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.77-3.4 7.23-8.55 11.53L12 21.35z"/>
     </svg>
     <span id="wishlist-text">{{ block.settings.text }}</span>
   </button>
-
 </div>
 
-<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-
 <script>
-document.addEventListener('alpine:init', () => {
-  Alpine.data('wishlist', () => ({
-    wishlisted: false,
+  const btn = document.getElementById("wishlist-btn");
+  const icon = document.getElementById("wishlist-icon");
+  const text = document.getElementById("wishlist-text");
 
-    async init() {
-      const productId = "{{ block.settings.product.id }}";
-      const customerId = "{{ customer.id | default: 'guest' }}";
-      const shop = "{{ shop.permanent_domain }}";
+  let wishlisted = false;
 
-      try {
-        const res = await fetch(`/apps/wishlist?productId=${productId}&customerId=${customerId}&shop=${shop}`);
-        const data = await res.json();
-        this.wishlisted = data.exists;
+  btn.addEventListener("click", () => {
+    wishlisted = !wishlisted;
 
-        document.getElementById("wishlist-icon").setAttribute("fill", this.wishlisted ? "#000" : "#fff");
-        document.getElementById("wishlist-text").innerText = this.wishlisted ? "Remove from wishlist" : "Add to wishlist";
-      } catch (err) {
-        console.error("Wishlist check error:", err);
-      }
-    },
+    if (wishlisted) {
+      icon.setAttribute("fill", "red");  // red background
+      icon.setAttribute("stroke", "black"); // black border
+      text.innerText = "Remove from wishlist";
 
-    async toggleWishlist() {
-      const productId = "{{ block.settings.product.id }}";
-      const productName = "{{ block.settings.product.title }}";
-      const customerId = "{{ customer.id | default: 'guest' }}";
-      const shop = "{{ shop.permanent_domain }}";
-
-      if (!customerId || customerId === "guest") {
-        alert("Please login to use wishlist");
-        return;
-      }
-
-      try {
-        if (this.wishlisted) {
-          // remove
-          await fetch("/apps/wishlist", {
-            method: "PATCH",
-            headers: { "Content-Type": "application/x-www-form-urlencoded" },
-            body: new URLSearchParams({ productId, customerId, shop, _action: "remove" })
-          });
-
-          this.wishlisted = false;
-          document.getElementById("wishlist-icon").setAttribute("fill", "#fff");
-          document.getElementById("wishlist-text").innerText = "Add to wishlist";
-        } else {
-          // add
-          await fetch("/apps/wishlist", {
-            method: "POST",
-            headers: { "Content-Type": "application/x-www-form-urlencoded" },
-            body: new URLSearchParams({ productId, productName, customerId, shop, _action: "add" })
-          });
-
-          this.wishlisted = true;
-          document.getElementById("wishlist-icon").setAttribute("fill", "#000");
-          document.getElementById("wishlist-text").innerText = "Remove from wishlist";
-        }
-      } catch (err) {
-        console.error("Wishlist toggle error:", err);
-      }
+      {% comment %} customer id {% endcomment %}
+       const customerId = "{{ customer.id }}"
+       const ProductId = "{{ product.id }}"
+       const ProductName = "{{ product.title }}"
+       if(customerId){
+       alert(customerId + " " + ProductId + " " + ProductName);
+       }
+    } else {
+      icon.setAttribute("fill", "#fff");  // white background
+      icon.setAttribute("stroke", "black"); // black border
+      text.innerText = "Add to wishlist";
     }
-  }))
-})
+  });
 </script>
 
 <style>
-  .wishlist-inspire__icon{
+  .wishlist-inspire__icon {
     display: flex;
     justify-content: center;
     max-width: 44rem;
   }
-  .wishlist-inspire__icon button{
+  .wishlist-inspire__icon button {
     background: none;
     border: none;
     padding: 0;
@@ -92,7 +53,7 @@ document.addEventListener('alpine:init', () => {
     gap: 0.5rem;
     align-items: center;
   }
-  .wishlist-inspire__icon--svg{
+  .wishlist-inspire__icon--svg {
     width: 2rem;
     height: 2rem;
   }

@@ -118,6 +118,7 @@ export default function ProductsPage() {
   };
 
   const rows = products.map((p) => [
+    // eslint-disable-next-line react/jsx-key
     <Thumbnail
       source={p.images?.edges[0]?.node?.originalSrc || ""}
       alt={p.images?.edges[0]?.node?.altText || p.title}
@@ -128,6 +129,7 @@ export default function ProductsPage() {
     p.status,
     p.variants?.edges[0]?.node?.price || "N/A",
     p.variants?.edges[0]?.node?.barcode || "—",
+    // eslint-disable-next-line react/jsx-key
     <div style={{ display: "flex", gap: "8px" }}>
       {/* Delete Button */}
       <fetcher.Form method="post">
@@ -202,7 +204,7 @@ export default function ProductsPage() {
               />
               <fetcher.Form method="post" style={{ flex: 1 }}>
                 <input type="hidden" name="productId" value={currentProduct.id} />
-                <input type="hidden" name="intent" value="update" />
+                <input type="hidden" name="in</Lintent" value="update" />
                 <TextField
                   label="Product Title"
                   value={productTitle}

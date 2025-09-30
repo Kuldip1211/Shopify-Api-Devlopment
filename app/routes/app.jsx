@@ -23,7 +23,7 @@ export default function App() {
           Home
         </Link>
         <Link to="/app/setting">Setting</Link>
-        <Link to="/app/pricing">Price</Link>
+        <Link to="/app/pricing">Wishlist Product</Link>
         <Link to="/app/product">Customer</Link>
       </NavMenu>
       <Outlet />

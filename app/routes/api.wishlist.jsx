@@ -1,14 +1,32 @@
-import { json } from "@remix-run/react";
+import { json } from "@remix-run/node"; // ✅ should be from @remix-run/node (not react)
 import db from "../db.server";
 import { cors } from "remix-utils/cors";
 
-export async function loader() {
-  return json({
-    ok: true,
-    message: "Hello from the api",
+// --- Loader: check if product is already in wishlist ---
+export async function loader({ request }) {
+  const url = new URL(request.url);
+  const productId = url.searchParams.get("productId");
+  const customerId = url.searchParams.get("customerId");
+  const shop = url.searchParams.get("shop");
+
+  if (!productId || !customerId || !shop) {
+    const response = json({ exists: false });
+    return cors(request, response);
+  }
+
+  const existing = await db.wishlist.findFirst({
+    where: {
+      productId,
+      customerId,
+      shop,
+    },
   });
+
+  const response = json({ exists: !!existing });
+  return cors(request, response);
 }
 
+// --- Action: add/remove wishlist ---
 export async function action({ request }) {
   const method = request.method;
   let data = await request.formData();
@@ -16,29 +34,18 @@ export async function action({ request }) {
 
   const userId = data.customerId;
   const productId = data.productId;
-  const productName = data.productName; // new field
+  const productName = data.productName;
   const shop = data.shop;
   const _action = data._action;
 
   if (!userId) {
-    return json({
-      message: "Missing data: userId is required",
-      method: _action,
-    });
+    return json({ message: "Missing data: userId is required", method: _action });
   }
-
   if (!productId) {
-    return json({
-      message: "Missing data: productId is required",
-      method: _action,
-    });
+    return json({ message: "Missing data: productId is required", method: _action });
   }
-
   if (!shop) {
-    return json({
-      message: "Missing data: shop is required",
-      method: _action,
-    });
+    return json({ message: "Missing data: shop is required", method: _action });
   }
 
   let response;
@@ -46,7 +53,6 @@ export async function action({ request }) {
   switch (method) {
     case "POST": {
       try {
-        // add to wishlist
         const wishlist = await db.wishlist.create({
           data: {
             customerId: String(userId),
@@ -64,17 +70,16 @@ export async function action({ request }) {
         });
         return cors(request, response);
       } catch (err) {
-        console.error("Wishlist add error:--------", userId);
-        return json({ error: err }, { status: 500 });
+        console.error("Wishlist add error:", err);
+        return json({ error: "Failed to add to wishlist" }, { status: 500 });
       }
     }
 
     case "PATCH": {
       try {
-        // remove from wishlist (example)
         await db.wishlist.deleteMany({
           where: {
-            userId,
+            customerId: userId, // ✅ fixed field name
             productId,
             shop,
           },
@@ -88,10 +93,7 @@ export async function action({ request }) {
         return cors(request, response);
       } catch (err) {
         console.error("Wishlist remove error:", err);
-        return json(
-          { error: "Failed to remove wishlist item" },
-          { status: 500 },
-        );
+        return json({ error: "Failed to remove wishlist item" }, { status: 500 });
       }
     }
 
