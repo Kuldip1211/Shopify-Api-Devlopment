@@ -2,7 +2,7 @@
 
 client_id = "2c7720de1391da38f5ce5c454f576255"
 name = "LikeProducts"
-application_url = "https://d3d0e242983a.ngrok-free.app"
+application_url = " https://71b32f15bc92.ngrok-free.app"
 embedded = true
 handle = "likeproducts"
 

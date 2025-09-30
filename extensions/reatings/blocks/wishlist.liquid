@@ -12,26 +12,54 @@
   const icon = document.getElementById("wishlist-icon");
   const text = document.getElementById("wishlist-text");
 
+  // Liquid → JS variables
+  const customerId = "{{ customer.id | default: '' }}";
+  const productId = "{{ product.id }}";
+  const productName = "{{ product.title | escape }}";
+  const shopDomain = "{{ shop.permanent_domain }}";
+
   let wishlisted = false;
 
-  btn.addEventListener("click", () => {
+  btn.addEventListener("click", async () => {
     wishlisted = !wishlisted;
 
     if (wishlisted) {
-      icon.setAttribute("fill", "red");  // red background
-      icon.setAttribute("stroke", "black"); // black border
+      // UI change
+      icon.setAttribute("fill", "red");
+      icon.setAttribute("stroke", "black");
       text.innerText = "Remove from wishlist";
 
-      {% comment %} customer id {% endcomment %}
-       const customerId = "{{ customer.id }}"
-       const ProductId = "{{ product.id }}"
-       const ProductName = "{{ product.title }}"
-       if(customerId){
-       alert(customerId + " " + ProductId + " " + ProductName);
-       }
+      if (!customerId) {
+        alert("Please login to use wishlist");
+        return;
+      }
+
+      // Call API
+      try {
+        const res = await fetch("/api/wishlist", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            productId,
+            productName,
+            customerId,
+            shopDomain,
+            _action: "add"
+          })
+        });
+
+        const data = await res.json();
+        console.log("Wishlist response:", data);
+        alert("Product added to wishlist!");
+      } catch (e) {
+        console.error("Wishlist API error:", e);
+        alert(e);
+      }
+
     } else {
-      icon.setAttribute("fill", "#fff");  // white background
-      icon.setAttribute("stroke", "black"); // black border
+      // UI revert
+      icon.setAttribute("fill", "#fff");
+      icon.setAttribute("stroke", "black");
       text.innerText = "Add to wishlist";
     }
   });
