@@ -1,6 +1,13 @@
 <div class="wishlist-inspire__icon">
   <button type="button" id="wishlist-btn">
-    <svg id="wishlist-icon" class="wishlist-inspire__icon--svg" viewBox="0 0 24 24" stroke-width="2" stroke="#000" fill="#fff">
+    <svg
+      id="wishlist-icon"
+      class="wishlist-inspire__icon--svg"
+      viewBox="0 0 24 24"
+      stroke-width="2"
+      stroke="#000"
+      fill="#fff"
+    >
       <path d="M12 21.35l-1.45-1.32C5.4 15.73 2 12.27 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.77-3.4 7.23-8.55 11.53L12 21.35z"/>
     </svg>
     <span id="wishlist-text">{{ block.settings.text }}</span>
@@ -8,59 +15,55 @@
 </div>
 
 <script>
-  const btn = document.getElementById("wishlist-btn");
-  const icon = document.getElementById("wishlist-icon");
-  const text = document.getElementById("wishlist-text");
+  const btn = document.getElementById('wishlist-btn');
+  const icon = document.getElementById('wishlist-icon');
+  const text = document.getElementById('wishlist-text');
 
   // Liquid → JS variables
   const customerId = "{{ customer.id | default: '' }}";
-  const productId = "{{ product.id }}";
-  const productName = "{{ product.title | escape }}";
-  const shopDomain = "{{ shop.permanent_domain }}";
+  const productId = '{{ product.id }}';
+  const productName = '{{ product.title | escape }}';
+  const shopDomain = '{{ shop.permanent_domain }}';
 
   let wishlisted = false;
 
-  btn.addEventListener("click", async () => {
+  btn.addEventListener('click', async () => {
     wishlisted = !wishlisted;
 
     if (wishlisted) {
       // UI change
-      icon.setAttribute("fill", "red");
-      icon.setAttribute("stroke", "black");
-      text.innerText = "Remove from wishlist";
+      icon.setAttribute('fill', 'red');
+      icon.setAttribute('stroke', 'black');
+      text.innerText = 'Remove from wishlist';
 
       if (!customerId) {
-        alert("Please login to use wishlist");
+        alert('Please login to use wishlist');
         return;
       }
 
+      alert('CustomerID : ' + customerId);
+
       // Call API
       try {
-        const res = await fetch("/api/wishlist", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
+        const res = await fetch('/apps/wishlist', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }, // ✅ tell backend it's JSON
           body: JSON.stringify({
-            productId,
-            productName,
-            customerId,
-            shopDomain,
-            _action: "add"
-          })
+            productId:productId,
+            productName : productName,
+            customerId : customerId,
+            shop: shopDomain,
+          }),
         });
-
-        const data = await res.json();
-        console.log("Wishlist response:", data);
-        alert("Product added to wishlist!");
       } catch (e) {
-        console.error("Wishlist API error:", e);
+        console.error('Wishlist API error:', JSON.stringify(e));
         alert(e);
       }
-
     } else {
       // UI revert
-      icon.setAttribute("fill", "#fff");
-      icon.setAttribute("stroke", "black");
-      text.innerText = "Add to wishlist";
+      icon.setAttribute('fill', '#fff');
+      icon.setAttribute('stroke', 'black');
+      text.innerText = 'Add to wishlist';
     }
   });
 </script>
