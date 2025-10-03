@@ -21,6 +21,7 @@ export async function action({ request }) {
     // ✅ Get query params (example: /apps/wishlist?action=true)
     const url = new URL(request.url);
     const show = url.searchParams.get("show");
+    const deleteData = url.searchParams.get("delete");
 
     if (show === "true") {
       const body = await request.json();
@@ -33,6 +34,12 @@ export async function action({ request }) {
       // 👉 If show is not true, return a simple success response
       return json(
         { ok: true, message: "API is working fine ✅" , body : wishlistData },
+        { headers: { "ngrok-skip-browser-warning": "true" } }
+      );
+    } // 👉 DELETE Wishlist Item
+    else if (deleteData === "true") {
+      return json(
+        { ok: true, message: `Deleted ✅ Wishlist item with ID` },
         { headers: { "ngrok-skip-browser-warning": "true" } }
       );
     }else{
