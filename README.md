@@ -3,140 +3,130 @@
 </h1>
 
 <p align="center" style="font-size:16px; color:#555;">
-  A custom Shopify app that allows customers to <b>add, view, and manage</b> their wishlist directly on the storefront.
+  A custom Shopify app that allows customers to <b>add, view, and manage</b> their wishlist directly on the storefront.  
+  Built with ❤️ using <b>Remix</b>, <b>Prisma</b>, and <b>Shopify App Proxy</b>.
 </p>
 
-<hr style="border:1px solid #eee;">
+<p align="center">
+  <img src="https://img.shields.io/badge/Shopify-App-green?logo=shopify&logoColor=white" alt="Shopify"/>
+  <img src="https://img.shields.io/badge/Remix-Framework-black?logo=remix&logoColor=white" alt="Remix"/>
+  <img src="https://img.shields.io/badge/Prisma-ORM-blue?logo=prisma&logoColor=white" alt="Prisma"/>
+  <img src="https://img.shields.io/badge/PostgreSQL-DB-blue?logo=postgresql&logoColor=white" alt="PostgreSQL"/>
+  <img src="https://img.shields.io/badge/Node.js-Backend-green?logo=node.js&logoColor=white" alt="Node.js"/>
+</p>
 
-<h2 style="color:#27ae60;">✨ Features</h2>
-<ul style="font-size:15px; line-height:1.6;">
-  <li>Customers can <b>add products</b> to their wishlist.</li>
-  <li>Wishlist items are <b>saved in the database (Prisma + PostgreSQL/MySQL)</b>.</li>
-  <li>Uses <b>Shopify App Proxy</b> to fetch & display wishlist items in Liquid theme.</li>
-  <li>Customers can <b>view their wishlist</b> in a styled table format.</li>
-  <li>Option to <b>delete items</b> from wishlist.</li>
+---
+
+## 📑 Table of Contents
+- [✨ Features](#-features)
+- [⚙️ Tech Stack](#️-tech-stack)
+- [🛠️ Setup Instructions](#️-setup-instructions)
+- [🚀 Usage](#-usage)
+- [⚠️ Problems I Faced & Solutions](#-problems-i-faced--solutions)
+- [📸 Screenshots](#-screenshots-coming-soon)
+- [👨‍💻 Author](#-author)
+
+---
+
+## ✨ Features
+- Customers can **add products** to their wishlist.  
+- Wishlist items are **saved in Prisma + PostgreSQL/MySQL**.  
+- Uses **Shopify App Proxy** to fetch & display wishlist items in Liquid theme.  
+- Customers can **view their wishlist** in a styled table format.  
+- Option to **delete items** from wishlist.  
+
+---
+
+## ⚙️ Tech Stack
+| Technology  | Purpose |
+|-------------|---------|
+| 🛍️ Shopify App | Custom storefront integration |
+| ⚡ Remix | Backend Framework |
+| 🗄️ Prisma | Database ORM |
+| 🛢️ PostgreSQL/MySQL | Wishlist Storage |
+| 💻 Liquid + JavaScript | Theme Integration |
+| 🌍 Ngrok | Local tunneling for Shopify |
+
+---
+
+## 🛠️ Setup Instructions
+1. Clone the repo and install dependencies.  
+2. Set up your database and update `prisma/schema.prisma`.  
+3. Run migrations:  
+   ```bash
+   npx prisma migrate dev
+
+<div style="max-width:900px; margin:40px auto; background:#fff; padding:30px; border-radius:12px; box-shadow:0 6px 18px rgba(0,0,0,0.1);">
+
+
+<h1 align="center" style="color:#2c3e50; font-size:32px; margin-bottom:10px;">🛍️ Shopify Wishlist App</h1>
+<p align="center" style="font-size:17px; color:#555; margin-bottom:25px;">
+A custom Shopify app that allows customers to <b>add, view, and manage</b> their wishlist directly on the storefront.
+</p>
+
+
+<hr style="border:0; height:2px; background:#eee; margin:20px 0;">
+
+
+<h2 style="color:#27ae60;">🚀 Start the App</h2>
+<pre style="background:#ecf0f1; padding:10px; border-radius:6px;">npm run dev</pre>
+
+
+<h2 style="color:#2980b9;">🌍 Expose with Ngrok</h2>
+<p>Expose app with <b>Ngrok</b> and configure the URL in Shopify App settings.</p>
+
+
+<h2 style="color:#8e44ad;">🔗 Add App Proxy</h2>
+<pre style="background:#ecf0f1; padding:10px; border-radius:6px;">/apps/wishlist → /api/wishlist</pre>
+
+
+<h2 style="color:#e67e22;">🚀 Usage</h2>
+<ul style="background:#fdfdfd; padding:15px; border-radius:8px; box-shadow:0 2px 6px rgba(0,0,0,0.05);">
+<li><b>Add to Wishlist:</b> Send <code>POST /apps/wishlist?show=true</code></li>
+<li><b>View Wishlist:</b> Fetch wishlist items by <code>customerId</code></li>
+<li><b>Delete Wishlist Item:</b> Send <code>POST /apps/wishlist?delete=true</code> with <code>productId</code> + <code>customerId</code></li>
 </ul>
+<p style="color:#27ae60; font-weight:bold;">✅ The backend returns the updated wishlist after add/delete.</p>
 
-<hr style="border:1px solid #eee;">
-
-<h2 style="color:#2980b9;">⚙️ Tech Stack</h2>
-<ul style="font-size:15px; line-height:1.6;">
-  <li><b>Shopify App (Custom)</b></li>
-  <li><b>Remix</b> (Backend Framework)</li>
-  <li><b>Prisma</b> (Database ORM)</li>
-  <li><b>PostgreSQL/MySQL</b> (Database)</li>
-  <li><b>Liquid + JavaScript</b> (Frontend integration)</li>
-  <li><b>Ngrok</b> (for development tunneling)</li>
-</ul>
-
-<hr style="border:1px solid #eee;">
-
-<h2 style="color:#e67e22;">🛠️ Setup Instructions</h2>
-<ol style="font-size:15px; line-height:1.6;">
-  <li>Clone the repo and install dependencies.</li>
-  <li>Set up your database and update <code>prisma/schema.prisma</code>.</li>
-  <li>Run <code>npx prisma migrate dev</code> to apply migrations.</li>
-  <li>Start the app with <code>npm run dev</code>.</li>
-  <li>Expose app with <b>Ngrok</b> and configure the URL in Shopify App settings.</li>
-  <li>Add App Proxy:
-    <ul>
-      <li><code>/apps/wishlist</code> → <code>/api/wishlist</code></li>
-    </ul>
-  </li>
-</ol>
-
-<hr style="border:1px solid #eee;">
-
-<h2 style="color:#8e44ad;">🚀 Usage</h2>
-<ul style="font-size:15px; line-height:1.6;">
-  <li><b>Add to Wishlist:</b> Customers can add a product via button (POST request with <code>?show=true</code>).</li>
-  <li><b>View Wishlist:</b> Fetch all wishlist items for the logged-in customer.</li>
-  <li><b>Delete Wishlist Item:</b> Remove an item with <code>?delete=true</code>.</li>
-</ul>
-
-<hr style="border:1px solid #eee;">
-
-<h2 style="color:#c0392b;">⚠️ Very Important Notes</h2>
-
-<h3>🚀 Start Ngrok First</h3>
-<p>Always start <b>Ngrok</b> before running your app, otherwise Shopify cannot reach your local server.</p>
-
-<h3>📥 Install Ngrok Without Admin</h3>
-<pre>
-wget https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v3-stable-linux-amd64.tgz
-tar -xvzf ngrok-v3-stable-linux-amd64.tgz
-mv ngrok $HOME/bin/
-export PATH=$HOME/bin:$PATH
-</pre>
-
-<h3>🔒 Fix SSL Certificate Errors</h3>
-<pre>
-export NODE_OPTIONS="--use-openssl-ca"
-export NODE_TLS_REJECT_UNAUTHORIZED=0
-export NODE_EXTRA_CA_CERTS=~/shopify-ca.pem
-export NODE_EXTRA_CA_CERTS=~/ca-certificates.crt
-export NODE_TLS_REJECT_UNAUTHORIZED=0
-</pre>
-
-<h3>🔄 Update App URLs</h3>
-<p>After starting Ngrok, <b>update all URLs</b in your <code>shopify.app.toml</code> file with your new Ngrok URL, then <b>rebuild configuration</b> and restart the app.</p>
-
-<h3>🌐 Creating Proxy URLs</h3>
-<ol>
-  <li>Go to <b>Shopify Partner Dashboard → App → Extensions → App Proxy</b>.</li>
-  <li>Click <b>Add App Proxy</b>.</li>
-  <li>Set Prefix: <code>apps</code>.</li>
-  <li>Set Subpath: <code>wishlist</code>.</li>
-  <li>Set Proxy URL: <code>https://your-ngrok-url/api/wishlist</code>.</li>
-  <li>Save → Now you can call: <code>https://yourstore.myshopify.com/apps/wishlist</code>.</li>
-</ol>
-
-<hr style="border:1px solid #eee;">
 
 <h2 style="color:#c0392b;">⚠️ Problems I Faced & Solutions</h2>
-<ul style="font-size:15px; line-height:1.6;">
-  <li>
-    <b>Problem:</b> Shopify App Proxy supported only one URL in <code>shopify.app.toml</code>.  
-    <br><b>Solution:</b> Configured multiple proxies directly from the Shopify Partner Dashboard.
-  </li>
-  <li>
-    <b>Problem:</b> Could not fetch JSON response inside Liquid (response not showing).  
-    <br><b>Solution:</b> Used <code>fetch</code> with proper headers (<code>'Content-Type': 'application/json'</code>) and parsed using <code>res.json()</code>.
-  </li>
-  <li>
-    <b>Problem:</b> Assignment to <code>const</code> variable when storing wishlist data.  
-    <br><b>Solution:</b> Changed <code>const</code> to <code>let</code> or updated array using <code>.push()</code>.
-  </li>
-  <li>
-    <b>Problem:</b> Wishlist not rendering properly after POST response.  
-    <br><b>Solution:</b> Used <code>JSON.stringify()</code> for debugging and later appended new items directly into DOM table.
-  </li>
-  <li>
-    <b>Problem:</b> Delete button not working.  
-    <br><b>Solution:</b> Sent <code>POST /apps/wishlist?delete=true</code> with <code>productId</code> and <code>customerId</code> to backend, then updated UI.
-  </li>
+<ul style="background:#fff5f5; padding:15px; border-radius:8px;">
+<li><b>Proxy Limitation:</b> Shopify only allowed one URL in <code>shopify.app.toml</code>.<br>
+👉 <span style="color:#27ae60;">Solved by configuring multiple proxies in Partner Dashboard.</span></li>
+
+
+<li><b>Liquid not showing JSON:</b><br>
+👉 <span style="color:#27ae60;">Fixed by using correct headers (<code>Content-Type: application/json</code>) and <code>res.json()</code>.</span></li>
+
+
+<li><b>Wishlist not updating after delete:</b><br>
+👉 <span style="color:#27ae60;">Used fetch → backend returns updated wishlist → re-rendered table.</span></li>
 </ul>
 
-<hr style="border:1px solid #eee;">
 
 <h2 style="color:#16a085;">📸 Screenshots (Coming Soon)</h2>
-<p>Will add UI screenshots of wishlist page here.</p>
+<p style="background:#ecf7ff; padding:10px; border-radius:6px;">✨ Wishlist Page Preview + Admin Panel</p>
 
-<hr style="border:1px solid #eee;">
 
 <h2 style="color:#34495e;">👨‍💻 Author</h2>
+<p><b>Kuldeep Chudasama</b><br>
+PHP Full Stack Developer | MERN Stack Developer</p>
+
+
+<h3 style="margin-top:15px; color:#2c3e50;">🔧 Skills</h3>
 <p>
-  <b>Kuldeep Chudasama</b> – PHP Full Stack Developer | MERN Stack Developer <br>
-  Skilled in:
+<img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/php/php-original.svg" alt="PHP" width="40" height="40" style="margin:5px;"/>
+<img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/wordpress/wordpress-plain.svg" alt="WordPress" width="40" height="40" style="margin:5px;"/>
+<img src="https://cdn.worldvectorlogo.com/logos/shopify.svg" alt="Shopify" width="40" height="40" style="margin:5px;"/>
+<img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/react/react-original.svg" alt="React.js" width="40" height="40" style="margin:5px;"/>
+<img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/nodejs/nodejs-original.svg" alt="Node.js" width="40" height="40" style="margin:5px;"/>
+<img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/express/express-original.svg" alt="Express.js" width="40" height="40" style="margin:5px;"/>
 </p>
 
-<p>
-  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/php/php-original.svg" alt="PHP" width="40" height="40"/> 
-  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/wordpress/wordpress-plain.svg" alt="WordPress" width="40" height="40"/> 
-  <img src="https://cdn.worldvectorlogo.com/logos/shopify.svg" alt="Shopify" width="40" height="40"/> 
-  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/react/react-original.svg" alt="React.js" width="40" height="40"/> 
-  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/nodejs/nodejs-original.svg" alt="Node.js" width="40" height="40"/> 
-  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/express/express-original.svg" alt="Express.js" width="40" height="40"/>
-</p>
 
-<a href="https://linkedin.com/in/kuldeep-chudasama-1759b1256">🔗 LinkedIn</a></p>
+<p>📌 <a href="https://linkedin.com/in/kuldeep-chudasama-1759b1256" style="color:#2980b9; text-decoration:none; font-weight:bold;">LinkedIn Profile</a></p>
+
+
+<h2 style="color:#f39c12;">⭐ Support</h2>
+<p>If you like this project, don’t forget to <b style="color:#27ae60;">star the repo</b> 🌟</p>
+</div>
