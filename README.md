@@ -125,5 +125,18 @@ export NODE_TLS_REJECT_UNAUTHORIZED=0
 <hr style="border:1px solid #eee;">
 
 <h2 style="color:#34495e;">👨‍💻 Author</h2>
-<p><b>Kuldeep Chudasama</b> – MERN Stack Developer <br>
+<p>
+  <b>Kuldeep Chudasama</b> – PHP Full Stack Developer | MERN Stack Developer <br>
+  Skilled in:
+</p>
+
+<p>
+  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/php/php-original.svg" alt="PHP" width="40" height="40"/> 
+  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/wordpress/wordpress-plain.svg" alt="WordPress" width="40" height="40"/> 
+  <img src="https://cdn.worldvectorlogo.com/logos/shopify.svg" alt="Shopify" width="40" height="40"/> 
+  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/react/react-original.svg" alt="React.js" width="40" height="40"/> 
+  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/nodejs/nodejs-original.svg" alt="Node.js" width="40" height="40"/> 
+  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/express/express-original.svg" alt="Express.js" width="40" height="40"/>
+</p>
+
 <a href="https://linkedin.com/in/kuldeep-chudasama-1759b1256">🔗 LinkedIn</a></p>
