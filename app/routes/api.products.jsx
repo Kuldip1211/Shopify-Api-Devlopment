@@ -2,11 +2,9 @@
 import { json } from "@remix-run/node";
 import { authenticate } from "../shopify.server";
 
-// 🧠 Fetch products with pagination (for Load More)
+// 🧩 --- Fetch products with pagination (for Load More)
 export const loader = async ({ request }) => {
   const { admin } = await authenticate.admin(request);
-
-  // Read cursor from URL
   const url = new URL(request.url);
   const after = url.searchParams.get("after");
 
@@ -62,62 +60,98 @@ export const loader = async ({ request }) => {
   }
 };
 
+// 🧠 --- Handle create/update/delete actions
 export const action = async ({ request }) => {
+  const { admin } = await authenticate.admin(request);
+  const url = new URL(request.url);
+  const isDelete = url.searchParams.get("delete");
 
-    const { admin } = await authenticate.admin(request);
+  // 🗑️ --- DELETE PRODUCT ---
+  if (isDelete === "true") {
+    const { id } = await request.json(); // ✅ match frontend body { id: deleteProduct.id }
 
-    const body = await request.json();
-
-    const { id, title, status, tags } = body;
-
-    // graphql mutation
-    const mutationQuery = `mutation updateProduct($input : ProductInput!){
-    productUpdate(input: $input){
-        product{
-            id
-            title
-            status
-            tags
-        }
-        userErrors {
+    const mutationQuery = `
+      mutation deleteProduct($input: ProductDeleteInput!) {
+        productDelete(input: $input) {
+          deletedProductId
+          userErrors {
             field
             message
+          }
         }
-    }
-  }`;
-
-    const variables = {
-      input: {
-        id,
-        title,
-        status,
-        tags,
-      },
-    };
+      }
+    `;
 
     try {
-      const response = await admin.graphql(mutationQuery, { variables });
+      const response = await admin.graphql(mutationQuery, {
+        variables: { input: { id } },
+      });
 
       const data = await response.json();
 
-      // check for userErrors
-      if (data.data.productUpdate.userErrors.length > 0) {
-        return json(
-          { error: data.data.productUpdate.userErrors },
-          { status: 400 },
-        );
+      // ❗ Handle GraphQL user errors
+      const errors = data?.data?.productDelete?.userErrors || [];
+      if (errors.length > 0) {
+        console.error("❌ Shopify userErrors:", errors);
+        return json({ success: false, errors }, { status: 400 });
       }
 
       return json({
         success: true,
-        updateProduct: data.data.productUpdate.product,
+        deletedId: data?.data?.productDelete?.deletedProductId,
       });
-      
     } catch (error) {
-      return json({
-        success: false,
-        error: error,
-      });
+      console.error("❌ Error deleting product:", error);
+      return json({ success: false, error: error.message }, { status: 500 });
     }
-  
-}
+  }
+
+  // ✏️ --- UPDATE PRODUCT ---
+  const body = await request.json();
+  const { id, title, status, tags } = body;
+
+  const mutationQuery = `
+    mutation updateProduct($input: ProductInput!) {
+      productUpdate(input: $input) {
+        product {
+          id
+          title
+          status
+          tags
+        }
+        userErrors {
+          field
+          message
+        }
+      }
+    }
+  `;
+
+  const variables = {
+    input: {
+      id,
+      title,
+      status,
+      tags,
+    },
+  };
+
+  try {
+    const response = await admin.graphql(mutationQuery, { variables });
+    const data = await response.json();
+
+    const errors = data?.data?.productUpdate?.userErrors || [];
+    if (errors.length > 0) {
+      console.error("⚠️ Shopify userErrors:", errors);
+      return json({ success: false, errors }, { status: 400 });
+    }
+
+    return json({
+      success: true,
+      updatedProduct: data?.data?.productUpdate?.product,
+    });
+  } catch (error) {
+    console.error("❌ Error updating product:", error);
+    return json({ success: false, error: error.message }, { status: 500 });
+  }
+};

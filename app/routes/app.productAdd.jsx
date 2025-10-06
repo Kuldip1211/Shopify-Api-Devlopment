@@ -80,7 +80,12 @@ export default function ProductsPage() {
   const [nextCursor, setNextCursor] = useState(pageInfo.endCursor);
   const [hasNextPage, setHasNextPage] = useState(pageInfo.hasNextPage);
   const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [activeProduct, setActiveProduct] = useState(null);
+
+  // 🆕 Delete modal state
+  const [deleteProduct, setDeleteProduct] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   // Form fields
   const [formData, setFormData] = useState({
@@ -92,9 +97,11 @@ export default function ProductsPage() {
 
   // Toast state
   const [toastActive, setToastActive] = useState(false);
+  const [deleteToast, setDeleteToast] = useState("");
   const toggleToast = useCallback(() => setToastActive((prev) => !prev), []);
+  const toggleDeleteToast = useCallback(() => setDeleteToast(""), []);
 
-  // 🧠 When modal opens
+  // 🧠 When modal opens (update modal)
   const toggleModal = useCallback(
     (product = null) => {
       if (product) {
@@ -136,40 +143,61 @@ export default function ProductsPage() {
 
   // 💾 Save Product Updates
   const handleSave = async () => {
+    setSaving(true);
     try {
       const response = await fetch("/api/products", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
       });
 
       const result = await response.json();
 
       if (result.success) {
-        // ✅ Show toast
+        const updated = await fetch("/api/products?refresh=true");
+        const updatedData = await updated.json();
+
+        if (updatedData?.products) setProducts(updatedData.products);
         setToastActive(true);
-
-        // ✅ Refetch the first 5 updated products
-        const refetch = await fetch("/app/products"); // same route as loader
-        const htmlText = await refetch.text();
-
-        // Extract new data via loader (in real apps, call API directly)
-        const updatedResponse = await fetch("/api/products?refresh=true");
-        const updatedData = await updatedResponse.json();
-
-        if (updatedData?.products) {
-          setProducts(updatedData.products);
-        }
       } else {
         console.error("⚠️ Update failed:", result.error);
       }
 
-      // Close modal
       toggleModal(null);
     } catch (error) {
       console.error("❌ Error saving product:", error);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // 🗑️ Delete Product
+  const handleDelete = async () => {
+    if (!deleteProduct) return;
+    setDeleting(true);
+    try {
+      const response = await fetch("/api/products?delete=true", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: deleteProduct.id }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        // Remove product from UI
+        setProducts((prev) => prev.filter((p) => p.id !== deleteProduct.id));
+
+        // ✅ Show toast with product title
+        setDeleteToast(deleteProduct.title);
+      } else {
+        console.error("⚠️ Delete failed:", result.error);
+      }
+    } catch (error) {
+      console.error("❌ Error deleting product:", error);
+    } finally {
+      setDeleting(false);
+      setDeleteProduct(null);
     }
   };
 
@@ -255,9 +283,27 @@ export default function ProductsPage() {
                       </p>
                     </div>
 
-                    <div style={{ textAlign: "center", marginTop: "10px" }}>
+                    {/* Buttons Section */}
+                    <div
+                      style={{
+                        textAlign: "center",
+                        marginTop: "10px",
+                        display: "flex",
+                        justifyContent: "center",
+                        gap: "10px",
+                      }}
+                    >
                       <Button primary onClick={() => toggleModal(p)}>
-                        Update Product
+                        Update
+                      </Button>
+
+                      <Button
+                        tone="critical"
+                        variant="primary"
+                        style={{ backgroundColor: "#D72C0D", color: "#fff" }}
+                        onClick={() => setDeleteProduct(p)}
+                      >
+                        Delete
                       </Button>
                     </div>
                   </Card>
@@ -281,57 +327,108 @@ export default function ProductsPage() {
         </Layout.Section>
       </Layout>
 
-      {/* 🧠 Editable Modal Form */}
       <Frame>
+        {/* 🧠 Update Modal */}
         {activeProduct && (
           <Modal
             open={!!activeProduct}
             onClose={() => toggleModal(null)}
             title={`Update: ${activeProduct.title}`}
             primaryAction={{
-              content: "Save Changes",
+              content: saving ? "Saving..." : "Save Changes",
               onAction: handleSave,
+              disabled: saving,
             }}
             secondaryActions={[
               { content: "Cancel", onAction: () => toggleModal(null) },
             ]}
           >
             <Modal.Section>
-              <div
-                style={{ display: "flex", flexDirection: "column", gap: "15px" }}
-              >
-                <TextField label="Product ID" value={formData.id} disabled />
-                <TextField
-                  label="Product Title"
-                  value={formData.title}
-                  onChange={handleChange("title")}
-                />
-                <Select
-                  label="Status"
-                  options={[
-                    { label: "Active", value: "ACTIVE" },
-                    { label: "Draft", value: "DRAFT" },
-                    { label: "Archived", value: "ARCHIVED" },
-                  ]}
-                  value={formData.status}
-                  onChange={handleChange("status")}
-                />
-                <TextField
-                  label="Price (₹)"
-                  type="number"
-                  value={formData.price}
-                  onChange={handleChange("price")}
-                />
-              </div>
+              {saving ? (
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "center",
+                    padding: "40px",
+                  }}
+                >
+                  <Spinner size="large" accessibilityLabel="Saving..." />
+                </div>
+              ) : (
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "15px",
+                  }}
+                >
+                  <TextField label="Product ID" value={formData.id} disabled />
+                  <TextField
+                    label="Product Title"
+                    value={formData.title}
+                    onChange={handleChange("title")}
+                  />
+                  <Select
+                    label="Status"
+                    options={[
+                      { label: "Active", value: "ACTIVE" },
+                      { label: "Draft", value: "DRAFT" },
+                      { label: "Archived", value: "ARCHIVED" },
+                    ]}
+                    value={formData.status}
+                    onChange={handleChange("status")}
+                  />
+                  <TextField
+                    label="Price (₹)"
+                    type="number"
+                    value={formData.price}
+                    onChange={handleChange("price")}
+                  />
+                </div>
+              )}
             </Modal.Section>
           </Modal>
         )}
 
-        {/* ✅ Success Toast */}
+        {/* 🗑️ Delete Modal */}
+        {deleteProduct && (
+          <Modal
+            open={!!deleteProduct}
+            onClose={() => setDeleteProduct(null)}
+            title="Delete Product"
+            primaryAction={{
+              content: deleting ? "Deleting..." : "Delete Product",
+              destructive: true,
+              onAction: handleDelete,
+              disabled: deleting,
+            }}
+            secondaryActions={[
+              { content: "Cancel", onAction: () => setDeleteProduct(null) },
+            ]}
+          >
+            <Modal.Section>
+              <TextField label="Product ID" value={deleteProduct.id} disabled />
+              <p style={{ marginTop: "10px" }}>
+                Are you sure you want to delete{" "}
+                <strong>{deleteProduct.title}</strong>?
+              </p>
+            </Modal.Section>
+          </Modal>
+        )}
+
+        {/* ✅ Toasts */}
         {toastActive && (
           <Toast
             content="✅ Product updated successfully!"
             onDismiss={toggleToast}
+          />
+        )}
+
+        {deleteToast && (
+          <Toast
+            content={`🗑️ Product "${deleteToast}" was deleted successfully!`}
+            tone="critical"
+            onDismiss={toggleDeleteToast}
           />
         )}
       </Frame>
