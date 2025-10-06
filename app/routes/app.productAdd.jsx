@@ -1,17 +1,19 @@
-import React from "react";
+// 📄 app/routes/app.products.jsx
+import React, { useState } from "react";
 import { useLoaderData } from "@remix-run/react";
 import { json } from "@remix-run/node";
 import { authenticate } from "../shopify.server";
-import { Card, Page, Layout, Button } from "@shopify/polaris";
+import { Card, Page, Layout, Button, Spinner } from "@shopify/polaris";
 
-// 🧩 --- Loader: Fetch first 5 products using Shopify GraphQL ---
+// 🧩 --- Loader: Fetch initial 5 products ---
 export const loader = async ({ request }) => {
   const { admin } = await authenticate.admin(request);
 
   const query = `
-    {
+    query {
       products(first: 5) {
         edges {
+          cursor
           node {
             id
             title
@@ -36,6 +38,10 @@ export const loader = async ({ request }) => {
             }
           }
         }
+        pageInfo {
+          hasNextPage
+          endCursor
+        }
       }
     }
   `;
@@ -46,17 +52,46 @@ export const loader = async ({ request }) => {
 
     const products =
       data?.data?.products?.edges?.map((edge) => edge.node) || [];
+    const pageInfo = data?.data?.products?.pageInfo || {};
 
-    return json({ products });
+    return json({ products, pageInfo });
   } catch (error) {
-    console.error("❌ Error fetching products:", error);
-    return json({ products: [] });
+    console.error("❌ GraphQL Error:", error);
+    return json({ products: [], pageInfo: {} });
   }
 };
 
-// 🧠 --- Component: Display Products with Simple Load More Button ---
+// 🧠 --- Component: Display + Load More ---
 export default function ProductsPage() {
-  const { products } = useLoaderData();
+  const { products: initialProducts, pageInfo } = useLoaderData();
+  const [products, setProducts] = useState(initialProducts);
+  const [nextCursor, setNextCursor] = useState(pageInfo.endCursor);
+  const [hasNextPage, setHasNextPage] = useState(pageInfo.hasNextPage);
+  const [loading, setLoading] = useState(false);
+
+  // 🔄 Load more products
+  const handleLoadMore = async () => {
+    if (!hasNextPage) return;
+    setLoading(true);
+
+    try {
+      const response = await fetch(`/api/products?after=${nextCursor}`);
+      const data = await response.json();
+
+      console.log("🔍 API Response:", data);
+
+      const newProducts = data?.products || [];
+      if (newProducts.length > 0) {
+        setProducts((prev) => [...prev, ...newProducts]);
+        setNextCursor(data.pageInfo.endCursor);
+        setHasNextPage(data.pageInfo.hasNextPage);
+      }
+    } catch (err) {
+      console.error("⚠️ Error loading more products:", err);
+    }
+
+    setLoading(false);
+  };
 
   return (
     <Page title="Shopify Products">
@@ -75,7 +110,7 @@ export default function ProductsPage() {
             >
               {products.map((p) => {
                 const image =
-                  p.images?.edges[0]?.node?.originalSrc ||
+                  p.images?.edges?.[0]?.node?.originalSrc ||
                   "https://cdn.shopify.com/s/files/1/0533/2089/files/placeholder-images-image_large.png";
 
                 return (
@@ -102,7 +137,7 @@ export default function ProductsPage() {
                       >
                         <img
                           src={image}
-                          alt={p.images?.edges[0]?.node?.altText || p.title}
+                          alt={p.images?.edges?.[0]?.node?.altText || p.title}
                           style={{
                             width: "100%",
                             height: "100%",
@@ -150,7 +185,7 @@ export default function ProductsPage() {
                           }}
                         >
                           Price: ₹
-                          {p.variants?.edges[0]?.node?.price || "N/A"}
+                          {p.variants?.edges?.[0]?.node?.price || "N/A"}
                         </p>
                         <p
                           style={{
@@ -158,7 +193,7 @@ export default function ProductsPage() {
                             color: "#8C9196",
                           }}
                         >
-                          Barcode: {p.variants?.edges[0]?.node?.barcode || "—"}
+                          Barcode: {p.variants?.edges?.[0]?.node?.barcode || "—"}
                         </p>
                       </div>
                     </div>
@@ -168,9 +203,15 @@ export default function ProductsPage() {
             </div>
           )}
 
-          {/* Simple Load More Button (No Functionality) */}
+          {/* Load More Button */}
           <div style={{ textAlign: "center", marginTop: "25px" }}>
-            <Button>Load More Products</Button>
+            {loading ? (
+              <Spinner accessibilityLabel="Loading more products" size="large" />
+            ) : hasNextPage ? (
+              <Button onClick={handleLoadMore}>Load More Products</Button>
+            ) : (
+              <p style={{ color: "#8C9196" }}>All products loaded ✅</p>
+            )}
           </div>
         </Layout.Section>
       </Layout>
