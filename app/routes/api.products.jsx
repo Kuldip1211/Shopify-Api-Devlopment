@@ -51,7 +51,8 @@ export const loader = async ({ request }) => {
     const response = await admin.graphql(query, { variables: { after } });
     const data = await response.json();
 
-    const products = data?.data?.products?.edges?.map((edge) => edge.node) || [];
+    const products =
+      data?.data?.products?.edges?.map((edge) => edge.node) || [];
     const pageInfo = data?.data?.products?.pageInfo || {};
 
     return json({ products, pageInfo });
@@ -60,3 +61,63 @@ export const loader = async ({ request }) => {
     return json({ products: [], pageInfo: {}, error: error.message });
   }
 };
+
+export const action = async ({ request }) => {
+
+    const { admin } = await authenticate.admin(request);
+
+    const body = await request.json();
+
+    const { id, title, status, tags } = body;
+
+    // graphql mutation
+    const mutationQuery = `mutation updateProduct($input : ProductInput!){
+    productUpdate(input: $input){
+        product{
+            id
+            title
+            status
+            tags
+        }
+        userErrors {
+            field
+            message
+        }
+    }
+  }`;
+
+    const variables = {
+      input: {
+        id,
+        title,
+        status,
+        tags,
+      },
+    };
+
+    try {
+      const response = await admin.graphql(mutationQuery, { variables });
+
+      const data = await response.json();
+
+      // check for userErrors
+      if (data.data.productUpdate.userErrors.length > 0) {
+        return json(
+          { error: data.data.productUpdate.userErrors },
+          { status: 400 },
+        );
+      }
+
+      return json({
+        success: true,
+        updateProduct: data.data.productUpdate.product,
+      });
+      
+    } catch (error) {
+      return json({
+        success: false,
+        error: error,
+      });
+    }
+  
+}

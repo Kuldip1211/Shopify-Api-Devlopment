@@ -1,9 +1,21 @@
 // 📄 app/routes/app.products.jsx
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import { useLoaderData } from "@remix-run/react";
 import { json } from "@remix-run/node";
 import { authenticate } from "../shopify.server";
-import { Card, Page, Layout, Button, Spinner } from "@shopify/polaris";
+import {
+  Card,
+  Page,
+  Layout,
+  Button,
+  Spinner,
+  Frame,
+  Modal,
+  TextField,
+  Select,
+  Toast,
+} from "@shopify/polaris";
+import "@shopify/polaris/build/esm/styles.css";
 
 // 🧩 --- Loader: Fetch initial 5 products ---
 export const loader = async ({ request }) => {
@@ -61,24 +73,54 @@ export const loader = async ({ request }) => {
   }
 };
 
-// 🧠 --- Component: Display + Load More ---
+// 🧠 --- Component ---
 export default function ProductsPage() {
   const { products: initialProducts, pageInfo } = useLoaderData();
   const [products, setProducts] = useState(initialProducts);
   const [nextCursor, setNextCursor] = useState(pageInfo.endCursor);
   const [hasNextPage, setHasNextPage] = useState(pageInfo.hasNextPage);
   const [loading, setLoading] = useState(false);
+  const [activeProduct, setActiveProduct] = useState(null);
 
-  // 🔄 Load more products
+  // Form fields
+  const [formData, setFormData] = useState({
+    id: "",
+    title: "",
+    status: "",
+    price: "",
+  });
+
+  // Toast state
+  const [toastActive, setToastActive] = useState(false);
+  const toggleToast = useCallback(() => setToastActive((prev) => !prev), []);
+
+  // 🧠 When modal opens
+  const toggleModal = useCallback(
+    (product = null) => {
+      if (product) {
+        setFormData({
+          id: product.id,
+          title: product.title || "",
+          status: product.status || "DRAFT",
+          price: product.variants?.edges?.[0]?.node?.price || "",
+        });
+      }
+      setActiveProduct(product);
+    },
+    [setActiveProduct]
+  );
+
+  // ✏️ Handle form change
+  const handleChange = (field) => (value) =>
+    setFormData((prev) => ({ ...prev, [field]: value }));
+
+  // 🔄 Load More
   const handleLoadMore = async () => {
     if (!hasNextPage) return;
     setLoading(true);
-
     try {
       const response = await fetch(`/api/products?after=${nextCursor}`);
       const data = await response.json();
-
-      console.log("🔍 API Response:", data);
 
       const newProducts = data?.products || [];
       if (newProducts.length > 0) {
@@ -89,8 +131,46 @@ export default function ProductsPage() {
     } catch (err) {
       console.error("⚠️ Error loading more products:", err);
     }
-
     setLoading(false);
+  };
+
+  // 💾 Save Product Updates
+  const handleSave = async () => {
+    try {
+      const response = await fetch("/api/products", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        // ✅ Show toast
+        setToastActive(true);
+
+        // ✅ Refetch the first 5 updated products
+        const refetch = await fetch("/app/products"); // same route as loader
+        const htmlText = await refetch.text();
+
+        // Extract new data via loader (in real apps, call API directly)
+        const updatedResponse = await fetch("/api/products?refresh=true");
+        const updatedData = await updatedResponse.json();
+
+        if (updatedData?.products) {
+          setProducts(updatedData.products);
+        }
+      } else {
+        console.error("⚠️ Update failed:", result.error);
+      }
+
+      // Close modal
+      toggleModal(null);
+    } catch (error) {
+      console.error("❌ Error saving product:", error);
+    }
   };
 
   return (
@@ -103,9 +183,9 @@ export default function ProductsPage() {
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
-                gap: "24px",
-                marginTop: "20px",
+                gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))",
+                gap: "20px",
+                marginTop: "25px",
               }}
             >
               {products.map((p) => {
@@ -114,88 +194,71 @@ export default function ProductsPage() {
                   "https://cdn.shopify.com/s/files/1/0533/2089/files/placeholder-images-image_large.png";
 
                 return (
-                  <Card key={p.id} sectioned>
+                  <Card
+                    key={p.id}
+                    sectioned
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      justifyContent: "space-between",
+                      borderRadius: "14px",
+                      boxShadow: "0 2px 10px rgba(0,0,0,0.08)",
+                      backgroundColor: "#fff",
+                    }}
+                  >
                     <div
                       style={{
+                        textAlign: "center",
                         display: "flex",
                         flexDirection: "column",
                         alignItems: "center",
-                        padding: "10px",
                       }}
                     >
-                      {/* Product Image */}
                       <div
                         style={{
                           width: "100%",
-                          height: "220px",
+                          height: "200px",
                           overflow: "hidden",
-                          borderRadius: "12px",
-                          marginBottom: "15px",
-                          boxShadow: "0 4px 10px rgba(0,0,0,0.1)",
+                          borderRadius: "10px",
+                          marginBottom: "10px",
                           backgroundColor: "#f6f6f7",
                         }}
                       >
                         <img
                           src={image}
-                          alt={p.images?.edges?.[0]?.node?.altText || p.title}
+                          alt={p.title}
                           style={{
                             width: "100%",
                             height: "100%",
                             objectFit: "cover",
-                            borderRadius: "12px",
+                            borderRadius: "10px",
                           }}
                         />
                       </div>
 
-                      {/* Product Info */}
-                      <div style={{ textAlign: "center" }}>
-                        <h2
+                      <h2 style={{ fontSize: "1rem", fontWeight: "600" }}>
+                        {p.title}
+                      </h2>
+                      <p style={{ color: "#616161" }}>
+                        Status:{" "}
+                        <span
                           style={{
-                            fontSize: "1.1rem",
-                            fontWeight: "600",
-                            color: "#202223",
-                            marginBottom: "5px",
+                            color:
+                              p.status === "ACTIVE" ? "#108043" : "#8C9196",
                           }}
                         >
-                          {p.title}
-                        </h2>
-                        <p
-                          style={{
-                            fontSize: "0.9rem",
-                            color: "#616161",
-                            marginBottom: "6px",
-                          }}
-                        >
-                          Status:{" "}
-                          <span
-                            style={{
-                              color:
-                                p.status === "ACTIVE" ? "#108043" : "#8C9196",
-                              fontWeight: "500",
-                            }}
-                          >
-                            {p.status}
-                          </span>
-                        </p>
-                        <p
-                          style={{
-                            fontSize: "0.95rem",
-                            color: "#212B36",
-                            marginBottom: "3px",
-                          }}
-                        >
-                          Price: ₹
-                          {p.variants?.edges?.[0]?.node?.price || "N/A"}
-                        </p>
-                        <p
-                          style={{
-                            fontSize: "0.85rem",
-                            color: "#8C9196",
-                          }}
-                        >
-                          Barcode: {p.variants?.edges?.[0]?.node?.barcode || "—"}
-                        </p>
-                      </div>
+                          {p.status}
+                        </span>
+                      </p>
+                      <p style={{ fontWeight: "500", color: "#212B36" }}>
+                        Price: ₹{p.variants?.edges?.[0]?.node?.price || "N/A"}
+                      </p>
+                    </div>
+
+                    <div style={{ textAlign: "center", marginTop: "10px" }}>
+                      <Button primary onClick={() => toggleModal(p)}>
+                        Update Product
+                      </Button>
                     </div>
                   </Card>
                 );
@@ -204,17 +267,74 @@ export default function ProductsPage() {
           )}
 
           {/* Load More Button */}
-          <div style={{ textAlign: "center", marginTop: "25px" }}>
+          <div style={{ textAlign: "center", marginTop: "30px" }}>
             {loading ? (
               <Spinner accessibilityLabel="Loading more products" size="large" />
             ) : hasNextPage ? (
-              <Button onClick={handleLoadMore}>Load More Products</Button>
+              <Button primary onClick={handleLoadMore}>
+                Load More Products
+              </Button>
             ) : (
               <p style={{ color: "#8C9196" }}>All products loaded ✅</p>
             )}
           </div>
         </Layout.Section>
       </Layout>
+
+      {/* 🧠 Editable Modal Form */}
+      <Frame>
+        {activeProduct && (
+          <Modal
+            open={!!activeProduct}
+            onClose={() => toggleModal(null)}
+            title={`Update: ${activeProduct.title}`}
+            primaryAction={{
+              content: "Save Changes",
+              onAction: handleSave,
+            }}
+            secondaryActions={[
+              { content: "Cancel", onAction: () => toggleModal(null) },
+            ]}
+          >
+            <Modal.Section>
+              <div
+                style={{ display: "flex", flexDirection: "column", gap: "15px" }}
+              >
+                <TextField label="Product ID" value={formData.id} disabled />
+                <TextField
+                  label="Product Title"
+                  value={formData.title}
+                  onChange={handleChange("title")}
+                />
+                <Select
+                  label="Status"
+                  options={[
+                    { label: "Active", value: "ACTIVE" },
+                    { label: "Draft", value: "DRAFT" },
+                    { label: "Archived", value: "ARCHIVED" },
+                  ]}
+                  value={formData.status}
+                  onChange={handleChange("status")}
+                />
+                <TextField
+                  label="Price (₹)"
+                  type="number"
+                  value={formData.price}
+                  onChange={handleChange("price")}
+                />
+              </div>
+            </Modal.Section>
+          </Modal>
+        )}
+
+        {/* ✅ Success Toast */}
+        {toastActive && (
+          <Toast
+            content="✅ Product updated successfully!"
+            onDismiss={toggleToast}
+          />
+        )}
+      </Frame>
     </Page>
   );
 }
